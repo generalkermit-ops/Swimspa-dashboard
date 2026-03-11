@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Swimspa Waterbalans</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f1a;--surface:#111827;--border:#1e293b;--border-light:#334155;
+  --text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--text-faint:#475569;--text-ghost:#334155;
+  --blue:#60a5fa;--blue-solid:#2563eb;--blue-bg:#1e3a5f;
+  --green:#4ade80;--green-solid:#16a34a;--green-bg:#14532d;
+  --lime:#a3e635;--lime-solid:#65a30d;--lime-bg:#365314;
+  --orange:#fb923c;--orange-solid:#ea580c;--orange-bg:#7c2d12;
+  --red:#f87171;
+  --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+html{font-size:16px}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+button{font-family:var(--sans);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.header{background:linear-gradient(135deg,#0f172a,#1e293b);border-bottom:1px solid var(--border);padding:max(env(safe-area-inset-top,16px),16px) 20px 16px;position:sticky;top:0;z-index:10}
+.header h1{font-size:20px;font-weight:700;color:#f1f5f9;letter-spacing:-.3px}
+.header p{font-size:12px;color:var(--text-muted);margin-top:2px}
+.header-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.btn{border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:500;transition:all .15s}
+.btn-primary{background:#1d4ed8;color:#fff;font-weight:600}
+.btn-primary:disabled{background:var(--border);color:var(--text-faint);cursor:default}
+.btn-ghost{background:var(--border);border:1px solid var(--border-light);color:var(--text-dim)}
+.btn-ghost.active{background:var(--blue-bg);border-color:var(--blue-solid);color:var(--blue)}
+.content{padding:16px 16px max(env(safe-area-inset-bottom,16px),80px)}
+.grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:20px}
+@media(min-width:540px){.grid{grid-template-columns:1fr 1fr}}
+@media(min-width:800px){.grid{grid-template-columns:1fr 1fr 1fr}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .2s}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.card-label{font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;line-height:1.5}
+.badge-low{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-solid)}
+.badge-ideal{background:var(--green-bg);color:var(--green);border:1px solid var(--green-solid)}
+.badge-ok{background:var(--lime-bg);color:var(--lime);border:1px solid var(--lime-solid)}
+.badge-high{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-solid)}
+
+.input-row{display:flex;align-items:baseline;gap:6px}
+.val-input{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:26px;font-weight:700;font-family:var(--mono);padding:7px 10px;width:100%;outline:none;transition:border-color .15s,color .2s}
+.val-input:focus{border-color:var(--border-light)}
+.val-unit{font-size:12px;color:var(--text-faint);font-weight:500;white-space:nowrap}
+
+.range-bar{position:relative;height:18px;margin-top:5px}
+.range-track{position:absolute;top:7px;left:0;right:0;height:4px;border-radius:2px;background:var(--border)}
+.range-ok{position:absolute;top:5px;height:8px;border-radius:4px;background:rgba(101,163,13,.2);border:1px solid rgba(101,163,13,.25)}
+.range-ideal{position:absolute;top:4px;height:10px;border-radius:5px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3)}
+.range-marker{position:absolute;top:2px;width:11px;height:14px;border-radius:3px;transform:translateX(-50%);transition:left .3s ease}
+.range-labels{display:flex;justify-content:space-between;margin-top:2px;font-size:9px}
+.range-labels .lo,.range-labels .hi{color:var(--text-ghost)}
+.range-labels .mid{color:var(--text-faint)}
+
+.toggle-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--text-ghost);font-size:11px;padding:5px 0 0;width:100%;text-align:left;transition:color .15s}
+.toggle-btn:hover,.toggle-btn.open{color:var(--blue)}
+.toggle-btn .arrow{font-size:9px;display:inline-block;transition:transform .15s}
+.toggle-btn.open .arrow{transform:rotate(90deg)}
+.toggle-btn.correction{color:var(--text-ghost)}
+.toggle-btn.correction:hover,.toggle-btn.correction.open{color:var(--orange)}
+.toggle-btn.correction-ok:hover,.toggle-btn.correction-ok.open{color:var(--green)}
+
+.hint-panel,.correction-panel{margin-top:7px;padding:10px 12px;border-radius:6px;font-size:12px;line-height:1.55;display:none}
+.hint-panel.open,.correction-panel.open{display:block}
+.hint-panel{background:rgba(15,23,42,.7);border:1px solid var(--border)}
+.hint-label{color:var(--text-faint);font-size:11px}
+.hint-value{color:var(--text);font-weight:500;font-size:12px}
+.hint-row{display:flex;gap:14px;margin-bottom:5px;flex-wrap:wrap}
+.hint-steps{color:var(--text-dim);margin:0}
+.correction-panel{border:1px solid rgba(251,146,60,.12);background:rgba(251,146,60,.03)}
+.correction-panel.ok-panel{border-color:rgba(74,222,128,.12);background:rgba(74,222,128,.03)}
+.correction-product{color:var(--text);font-weight:600;font-size:13px}
+.correction-amount{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--orange);background:rgba(251,146,60,.08);padding:2px 7px;border-radius:4px;border:1px solid rgba(251,146,60,.12)}
+.correction-instruction{color:var(--text-dim);margin:5px 0 0}
+.correction-ok-text{color:var(--green);margin:0}
+
+.actions{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.history-panel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:20px}
+.history-panel h3{font-size:14px;font-weight:600;color:var(--text-dim);margin-bottom:12px}
+.history-list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.history-entry{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;flex-wrap:wrap}
+.history-date{font-size:11px;color:var(--text-muted);font-family:var(--mono);min-width:120px}
+.history-vals{font-size:11px;color:var(--text-dim);font-family:var(--mono);flex:1}
+.history-btns{display:flex;gap:4px}
+.history-btns button{font-size:10px;padding:3px 8px;border-radius:4px;background:var(--border);border:1px solid var(--border-light);font-family:var(--sans)}
+.history-btns .load{color:var(--blue)}
+.history-btns .del{color:var(--red)}
+
+.advice-section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.advice-section h3{font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:12px;letter-spacing:-.2px}
+.advice-card{border-radius:6px;padding:12px 14px;margin-bottom:8px}
+.advice-card:last-child{margin-bottom:0}
+.advice-ok{background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.12)}
+.advice-warn{background:rgba(251,146,60,.05);border:1px solid rgba(251,146,60,.12)}
+.advice-action{background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.12)}
+.advice-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.advice-product{font-size:13px;font-weight:600}
+.advice-amount{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text)}
+.advice-detail{font-size:12px;color:var(--text-dim);line-height:1.5;margin-top:4px}
+.ref-box{margin-top:20px;padding:14px;background:#0d1117;border:1px solid #161b22;border-radius:8px;font-size:11px;color:var(--text-faint);line-height:1.6}
+.ref-box strong{color:var(--text-muted);font-weight:600;display:block;margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div>
+      <h1>Swimspa Waterbalans</h1>
+      <p>Passion Activity 1 &middot; 7500L &middot; EcoSalt2 + EPS ONE</p>
+    </div>
+    <button class="btn btn-ghost" id="histBtn">Historie (<span id="histCount">0</span>)</button>
+  </div>
+</div>
+
+<div class="content">
+  <div id="historyPanel" class="history-panel" style="display:none">
+    <h3>Meethistorie</h3>
+    <div class="history-list" id="histList"></div>
+  </div>
+
+  <div class="grid" id="cardGrid"></div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="saveBtn" disabled>Meting opslaan</button>
+    <button class="btn btn-ghost" id="clearBtn">Wissen</button>
+  </div>
+
+  <div id="adviceSection" class="advice-section" style="display:none">
+    <h3>Doseringsadvies</h3>
+    <div id="adviceList"></div>
+  </div>
+
+  <div class="ref-box">
+    <strong>Berekeningsbasis (7500L)</strong>
+    TA+: 112.5g = +10 ppm (max 225g per behandeling) &middot;
+    pH Up BSI: 150 ml = +0.2 pH (stappen max 150 ml) &middot;
+    Zout: ~1 kg/m3 = +1 ppt &middot;
+    Volgorde: altijd eerst TA, dan pH &middot;
+    Circulatiepomp min. 2-4 uur na toevoeging
+  </div>
+</div>
+
+<script>
+const VOL=7.5;
+const PARAMS={
+  ph:{min:7.0,max:7.6,iMin:7.2,iMax:7.3,unit:'',label:'pH',step:'0.01'},
+  ta:{min:80,max:120,iMin:90,iMax:110,unit:'ppm',label:'TA (alkaliniteit)',step:'1'},
+  chlorine:{min:1,max:3,iMin:1.5,iMax:2.5,unit:'ppm',label:'Vrije chloor',step:'0.1'},
+  rx:{min:700,max:750,iMin:710,iMax:740,unit:'mV',label:'Rx (ORP)',step:'1'},
+  salt:{min:3.5,max:4.0,iMin:3.6,iMax:3.9,unit:'ppt',label:'Zout (TDS)',step:'0.01'}
+};
+const HINTS={
+  ph:{tool:'Lumiso Pooltest',tablet:'Phenol Red (roze tablet)',steps:'Vul cuvet tot streep met spa-water. Doe eerst een blanking (nulmeting) met alleen water. Voeg daarna 1 Phenol Red tablet toe, crush en laat oplossen. Plaats cuvet terug en lees pH af. Doelwaarde op meter: 7.3.'},
+  ta:{tool:'Lumiso Pooltest',tablet:'Alkaphot (witte tablet)',steps:'Vul cuvet tot streep met spa-water. Doe eerst een blanking. Voeg 1 Alkaphot tablet toe, crush en oplossen. Lees TA af in ppm. Handgeschreven target op je kit: 80-120.'},
+  chlorine:{tool:'Lumiso Pooltest',tablet:'DPD1 (witte tablet)',steps:'Vul cuvet tot streep met spa-water. Doe eerst een blanking. Voeg 1 DPD1 tablet toe, crush en oplossen. Lees vrije chloor af. Handgeschreven target op je kit: 6.20 (meterwaarde). Voor totaal chloor: doe daarna DPD3 tablet erbij.'},
+  rx:{tool:'EPS ONE display',tablet:'Geen tablet nodig',steps:'Lees direct af op het EPS ONE scherm: onderste regel toont Rx in mV. Geen handeling nodig, de elektrode meet continu. Bij twijfel: kalibreer Rx-elektrode met 475 mV ijkvloeistof.'},
+  salt:{tool:'Hanna HI983024 TDS-meter',tablet:'Geen tablet nodig',steps:'Zet de meter aan. Dompel onderkant max 4 cm in spa-water. Wacht tot waarde stabiliseert, lees af in ppt. Kalibratie: gebruik 6.44 mS/cm kalibratievloeistof als de meter afwijkt.'}
+};
+
+const BADGE={low:'Te laag',ideal:'Ideaal',ok:'Acceptabel',high:'Te hoog'};
+const values={ph:'',ta:'',chlorine:'',rx:'',salt:''};
+let history=[];
+
+function getStatus(k,v){
+  if(v===''||v==null)return null;
+  const n=parseFloat(v);if(isNaN(n))return null;
+  const t=PARAMS[k];
+  if(n<t.min)return'low';if(n>t.max)return'high';
+  if(n>=t.iMin&&n<=t.iMax)return'ideal';return'ok';
+}
+
+function getCorrection(k,v){
+  const n=parseFloat(v);if(isNaN(n))return null;
+  const t=PARAMS[k];
+  if(n>=t.min&&n<=t.max)return{ok:true,text:'Waarde is binnen bereik. Geen correctie nodig.'};
+  switch(k){
+    case'ph':if(n<t.min){
+      const d=7.2-n,s=d/.2,ml=Math.round(s*20*VOL),ns=Math.ceil(ml/150);
+      return{product:'BSI pH Up (vloeibaar)',amount:ml+' ml totaal',instruction:'Voeg toe in stappen van max 150 ml. Dat zijn '+ns+' stap'+(ns>1?'pen':'')+'. Na elke stap min. 2 uur wachten met circulatiepomp aan, dan opnieuw pH meten. Let op: pas pH pas aan nadat TA op peil is (80-120 ppm).'};
+    }else{
+      const d=n-7.2,s=d/.2,ml=Math.round(s*20*VOL),ns=Math.ceil(ml/150);
+      return{product:'pH Down / pH min (zuur)',amount:ml+' ml totaal',instruction:'Voeg toe in stappen van max 150 ml. Dat zijn '+ns+' stap'+(ns>1?'pen':'')+'. Na elke stap min. 2 uur wachten met circulatiepomp aan, dan opnieuw pH meten.'};
+    }
+    case'ta':if(n<t.min){
+      const d=100-n,g=Math.round(d/10*(VOL/10)*150),c=Math.min(g,225),ss=g>225?Math.ceil(g/225):1;
+      return{product:'TA+ poeder (witte emmer)',amount:ss>1?g+'g totaal, '+c+'g per keer':g+'g',instruction:ss>1?'Verdeel over '+ss+' behandelingen (max 225g per keer). Los op in emmer warm water. Giet gelijkmatig over wateroppervlak bij draaiende circulatiepomp. Wacht min. 4 uur tussen behandelingen.':'Los op in emmer warm water. Giet gelijkmatig over wateroppervlak bij draaiende circulatiepomp. Na min. 2 uur opnieuw meten.'};
+    }else{
+      return{product:'Gedeeltelijke waterverversing',amount:'',instruction:'Er is geen chemisch middel om TA te verlagen. Vervang een deel van het water door vers leidingwater. Meet na bijvullen opnieuw.'};
+    }
+    case'chlorine':if(n<t.min){
+      return{product:'Davey EcoSalt2 (productie verhogen)',amount:'',instruction:'Verhoog productiepercentage op de EcoSalt2. Controleer flow switch en of de cel schoon is (geen kalkaanslag). Als noodmaatregel: snelwerkend chloorgranulaat.'};
+    }else{
+      return{product:'Davey EcoSalt2 (productie verlagen)',amount:'',instruction:'Verlaag productiepercentage op de EcoSalt2. Open eventueel de cover om chloor sneller te laten verdampen. Niet zwemmen zolang vrije chloor boven 5 ppm.'};
+    }
+    case'rx':if(n<t.min){
+      return{product:'Davey EcoSalt2 + EPS ONE controle',amount:'',instruction:'Rx te laag = onvoldoende desinfectie. Controleer zoutgehalte (3.5-4.0 ppt). Verhoog chloorproductie op EcoSalt2. Check of Rx-elektrode gekalibreerd is (475 mV ijkvloeistof).'};
+    }else{
+      return{product:'Davey EcoSalt2 (productie verlagen)',amount:'',instruction:'Rx te hoog = teveel oxidatiemiddel. Verlaag chloorproductie op EcoSalt2. Controleer EPS ONE Rx-setpoint (doel: 700-750 mV).'};
+    }
+    case'salt':if(n<t.min){
+      const kg=(3.75-n)*VOL;
+      return{product:'Zwembadzout (NaCl, niet-gejodeerd)',amount:kg.toFixed(1)+' kg',instruction:'Los zout op in emmer warm water. Giet gelijkmatig in spa bij draaiende circulatiepomp. Wacht min. 24 uur voor je opnieuw meet met de Hanna meter.'};
+    }else{
+      const l=Math.round(((n-3.75)/n)*7500);
+      return{product:'Gedeeltelijke waterverversing',amount:'Circa '+l+' liter vervangen',instruction:'Laat deel van het water af via afvoer, vul bij met vers leidingwater. Meet na 4 uur opnieuw met Hanna TDS-meter.'};
+    }
+  }
+  return null;
+}
+
+function calcAdvice(){
+  const a=[];
+  const ta=parseFloat(values.ta),ph=parseFloat(values.ph),salt=parseFloat(values.salt),rx=parseFloat(values.rx),cl=parseFloat(values.chlorine);
+  if(!isNaN(ta)){
+    if(ta<80){const d=100-ta,g=d/10*(VOL/10)*150,c=Math.min(g,225),s=g>225?Math.ceil(g/225):1;
+      a.push({p:1,product:'TA+ (witte emmer)',amount:Math.round(c)+'g',detail:s>1?'Totaal '+Math.round(g)+'g nodig. Verdeel over '+s+' behandelingen (max 225g per keer). Oplossen in emmer water, circulatiepomp aan.':'Oplossen in emmer water, gelijkmatig verdelen. Circulatiepomp min. 2 uur aan.',type:'action'});}
+    else if(ta>150)a.push({p:1,product:'TA te hoog',amount:'',detail:'TA boven 150 ppm. Overweeg gedeeltelijke waterverversing.',type:'warning'});
+  }
+  if(!isNaN(ph)){
+    if(ph<7){const d=7.2-ph,s=d/.2,ml=s*20*VOL;
+      a.push({p:2,product:'BSI pH Up (vloeibaar)',amount:Math.round(ml)+' ml',detail:'In stappen van max 150 ml. Na elke stap 2 uur wachten en opnieuw meten.'+(!isNaN(ta)&&ta<80?' Eerst TA op peil brengen.':''),type:'action'});}
+    else if(ph>7.6){const d=ph-7.2,s=d/.2,ml=s*20*VOL;
+      a.push({p:2,product:'pH Down (zuur)',amount:Math.round(ml)+' ml',detail:'In stappen van max 150 ml. Na elke stap 2 uur wachten en opnieuw meten.',type:'action'});}
+  }
+  if(!isNaN(salt)){
+    if(salt<3.5){const d=3.75-salt,kg=d*VOL;a.push({p:3,product:'Zwembadzout',amount:kg.toFixed(1)+' kg',detail:'Oplossen in emmer warm water. Gelijkmatig verdelen bij draaiende circulatiepomp. Na 24 uur opnieuw meten met Hanna.',type:'action'});}
+    else if(salt>4.5)a.push({p:3,product:'Zout te hoog',amount:'',detail:'Zoutgehalte boven 4.5 ppt. Verdun met vers water.',type:'warning'});
+  }
+  if(!isNaN(rx)){
+    if(rx<650)a.push({p:4,product:'Rx te laag',amount:'',detail:'ORP onder 650 mV. Controleer EcoSalt2 output en zoutgehalte.',type:'warning'});
+    else if(rx>800)a.push({p:4,product:'Rx te hoog',amount:'',detail:'ORP boven 800 mV. Verlaag chloorproductie op EcoSalt2.',type:'warning'});
+  }
+  if(!isNaN(cl)){
+    if(cl<1)a.push({p:4,product:'Chloor te laag',amount:'',detail:'Vrije chloor onder 1 ppm. Verhoog chloorproductie of controleer cel/flow switch.',type:'warning'});
+    else if(cl>5)a.push({p:4,product:'Chloor te hoog',amount:'',detail:'Vrije chloor boven 5 ppm. Verlaag EcoSalt2 output.',type:'warning'});
+  }
+  if(a.length===0&&Object.values(values).some(v=>v!==''))
+    a.push({p:99,product:'Alles in orde',amount:'',detail:'Alle gemeten waarden binnen doelbereiken. Geen actie nodig.',type:'ok'});
+  return a.sort((a,b)=>a.p-b.p);
+}
+
+// Storage
+function loadHistory(){try{const d=localStorage.getItem('swimspa-history');if(d)history=JSON.parse(d)}catch(e){}}
+function saveHistory(){try{localStorage.setItem('swimspa-history',JSON.stringify(history.slice(0,50)))}catch(e){}}
+
+// Render
+function buildCard(k){
+  const t=PARAMS[k],h=HINTS[k];
+  return`<div class="card" id="card-${k}">
+  <div class="card-head">
+    <span class="card-label">${t.label}</span>
+    <span class="badge" id="badge-${k}" style="display:none"></span>
+  </div>
+  <div class="input-row">
+    <input type="number" class="val-input" id="input-${k}" step="${t.step}" placeholder="${t.iMin}" inputmode="decimal">
+    ${t.unit?'<span class="val-unit">'+t.unit+'</span>':''}
+  </div>
+  <div class="range-bar" id="bar-${k}">
+    <div class="range-track"></div>
+    <div class="range-ok" id="rok-${k}"></div>
+    <div class="range-ideal" id="rideal-${k}"></div>
+    <div class="range-marker" id="rmark-${k}" style="display:none"></div>
+  </div>
+  <div class="range-labels"><span class="lo">${t.min}</span><span class="mid">ideaal ${t.iMin}-${t.iMax}</span><span class="hi">${t.max}</span></div>
+  <button class="toggle-btn" id="hintBtn-${k}"><span class="arrow">&#9654;</span> Hoe meet ik dit?</button>
+  <div class="hint-panel" id="hintPanel-${k}">
+    <div class="hint-row">
+      <span><span class="hint-label">Apparaat: </span><span class="hint-value">${h.tool}</span></span>
+      <span><span class="hint-label">Tablet: </span><span class="hint-value">${h.tablet}</span></span>
+    </div>
+    <p class="hint-steps">${h.steps}</p>
+  </div>
+  <button class="toggle-btn correction" id="corrBtn-${k}" style="display:none"><span class="arrow">&#9654;</span> <span class="corr-label">Wat moet ik toevoegen?</span></button>
+  <div class="correction-panel" id="corrPanel-${k}"></div>
+</div>`;
+}
+
+function renderCards(){
+  document.getElementById('cardGrid').innerHTML=Object.keys(PARAMS).map(k=>buildCard(k)).join('');
+  // Position range zones
+  Object.keys(PARAMS).forEach(k=>{
+    const t=PARAMS[k],span=t.max-t.min,pad=span*.5,dMin=t.min-pad,dMax=t.max+pad,dSpan=dMax-dMin;
+    const rok=document.getElementById('rok-'+k);
+    rok.style.left=((t.min-dMin)/dSpan*100)+'%';
+    rok.style.width=(span/dSpan*100)+'%';
+    const ri=document.getElementById('rideal-'+k);
+    ri.style.left=((t.iMin-dMin)/dSpan*100)+'%';
+    ri.style.width=((t.iMax-t.iMin)/dSpan*100)+'%';
+    // Input listener
+    document.getElementById('input-'+k).addEventListener('input',function(){
+      values[k]=this.value;updateCard(k);updateAdvice();updateSaveBtn();
+    });
+    // Toggle listeners
+    document.getElementById('hintBtn-'+k).addEventListener('click',function(){
+      this.classList.toggle('open');
+      document.getElementById('hintPanel-'+k).classList.toggle('open');
+    });
+    document.getElementById('corrBtn-'+k).addEventListener('click',function(){
+      this.classList.toggle('open');
+      document.getElementById('corrPanel-'+k).classList.toggle('open');
+    });
+  });
+}
+
+const statusColors={low:'var(--blue)',ideal:'var(--green)',ok:'var(--lime)',high:'var(--orange)'};
+
+function updateCard(k){
+  const v=values[k],st=getStatus(k,v),t=PARAMS[k];
+  const badge=document.getElementById('badge-'+k);
+  const input=document.getElementById('input-'+k);
+  const card=document.getElementById('card-'+k);
+  const marker=document.getElementById('rmark-'+k);
+  const corrBtn=document.getElementById('corrBtn-'+k);
+  const corrPanel=document.getElementById('corrPanel-'+k);
+
+  if(st){
+    badge.style.display='';badge.className='badge badge-'+st;badge.textContent=BADGE[st];
+    input.style.color=statusColors[st];
+    card.style.borderColor=st==='ideal'?'rgba(22,163,74,.3)':st==='ok'?'rgba(101,163,13,.25)':st==='low'?'rgba(37,99,235,.3)':'rgba(234,88,12,.3)';
+    // Marker
+    const n=parseFloat(v),span=t.max-t.min,pad=span*.5,dMin=t.min-pad,dMax=t.max+pad,dSpan=dMax-dMin;
+    let pos=((n-dMin)/dSpan)*100;pos=Math.max(1,Math.min(99,pos));
+    marker.style.display='';marker.style.left=pos+'%';marker.style.background=statusColors[st];
+    marker.style.boxShadow='0 0 8px '+statusColors[st]+'44';
+  }else{
+    badge.style.display='none';input.style.color='var(--text)';card.style.borderColor='var(--border)';marker.style.display='none';
+  }
+  // Correction
+  if(v!==''){
+    corrBtn.style.display='';
+    const c=getCorrection(k,v);
+    if(c){
+      if(c.ok){
+        corrBtn.querySelector('.corr-label').textContent='Correctie nodig?';
+        corrBtn.className='toggle-btn correction-ok'+(corrPanel.classList.contains('open')?' open':'');
+        corrPanel.className='correction-panel ok-panel'+(corrPanel.classList.contains('open')?' open':'');
+        corrPanel.innerHTML='<p class="correction-ok-text">'+c.text+'</p>';
+      }else{
+        corrBtn.querySelector('.corr-label').textContent='Wat moet ik toevoegen?';
+        corrBtn.className='toggle-btn correction'+(corrPanel.classList.contains('open')?' open':'');
+        corrPanel.className='correction-panel'+(corrPanel.classList.contains('open')?' open':'');
+        corrPanel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:5px">'
+          +'<span class="correction-product">'+c.product+'</span>'
+          +(c.amount?'<span class="correction-amount">'+c.amount+'</span>':'')
+          +'</div><p class="correction-instruction">'+c.instruction+'</p>';
+      }
+    }
+  }else{
+    corrBtn.style.display='none';corrPanel.classList.remove('open');corrBtn.classList.remove('open');
+  }
+}
+
+function updateAdvice(){
+  const hasInput=Object.values(values).some(v=>v!=='');
+  const section=document.getElementById('adviceSection');
+  const list=document.getElementById('adviceList');
+  if(!hasInput){section.style.display='none';return;}
+  section.style.display='';
+  const advice=calcAdvice();
+  list.innerHTML=advice.map((a,i)=>{
+    const cls=a.type==='ok'?'advice-ok':a.type==='warning'?'advice-warn':'advice-action';
+    const clr=a.type==='ok'?'var(--green)':a.type==='warning'?'var(--orange)':'var(--blue)';
+    return'<div class="advice-card '+cls+'">'
+      +'<div class="advice-head"><span class="advice-product" style="color:'+clr+'">'+(a.type==='action'?(i+1)+'. ':'')+a.product+'</span>'
+      +(a.amount?'<span class="advice-amount">'+a.amount+'</span>':'')
+      +'</div>'
+      +(a.detail?'<p class="advice-detail">'+a.detail+'</p>':'')
+      +'</div>';
+  }).join('');
+}
+
+function updateSaveBtn(){
+  document.getElementById('saveBtn').disabled=!Object.values(values).some(v=>v!=='');
+}
+
+function renderHistory(){
+  const el=document.getElementById('histList');
+  document.getElementById('histCount').textContent=history.length;
+  if(history.length===0){el.innerHTML='<p style="color:var(--text-faint);font-size:12px">Nog geen metingen opgeslagen.</p>';return;}
+  el.innerHTML=history.map((e,i)=>{
+    const d=new Date(e.timestamp);
+    const ds=d.toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const vs=Object.entries(e.values).filter(([,v])=>v!=='').map(([k,v])=>PARAMS[k].label.split(' ')[0]+': '+v).join(' | ');
+    return'<div class="history-entry"><span class="history-date">'+ds+'</span><span class="history-vals">'+vs+'</span><div class="history-btns"><button class="load" data-i="'+i+'">Laden</button><button class="del" data-i="'+i+'">Wis</button></div></div>';
+  }).join('');
+  el.querySelectorAll('.load').forEach(b=>b.addEventListener('click',function(){loadEntry(+this.dataset.i)}));
+  el.querySelectorAll('.del').forEach(b=>b.addEventListener('click',function(){deleteEntry(+this.dataset.i)}));
+}
+
+function loadEntry(i){
+  const e=history[i];if(!e)return;
+  Object.entries(e.values).forEach(([k,v])=>{
+    values[k]=v;document.getElementById('input-'+k).value=v;updateCard(k);
+  });
+  updateAdvice();updateSaveBtn();
+  document.getElementById('historyPanel').style.display='none';
+  document.getElementById('histBtn').classList.remove('active');
+}
+function deleteEntry(i){
+  history.splice(i,1);saveHistory();renderHistory();
+}
+
+// Init
+loadHistory();
+renderCards();
+renderHistory();
+
+document.getElementById('saveBtn').addEventListener('click',function(){
+  const entry={id:Date.now(),timestamp:new Date().toISOString(),values:{...values}};
+  history.unshift(entry);saveHistory();renderHistory();
+  this.textContent='Opgeslagen!';setTimeout(()=>{this.textContent='Meting opslaan'},1200);
+});
+document.getElementById('clearBtn').addEventListener('click',function(){
+  Object.keys(values).forEach(k=>{
+    values[k]='';document.getElementById('input-'+k).value='';updateCard(k);
+    // Close panels
+    const cp=document.getElementById('corrPanel-'+k);cp.classList.remove('open');
+    document.getElementById('corrBtn-'+k).classList.remove('open');
+  });
+  updateAdvice();updateSaveBtn();
+});
+document.getElementById('histBtn').addEventListener('click',function(){
+  const p=document.getElementById('historyPanel');
+  const open=p.style.display!=='none';
+  p.style.display=open?'none':'';
+  this.classList.toggle('active',!open);
+});
+
+// PWA registration
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
