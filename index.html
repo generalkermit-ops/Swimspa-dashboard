@@ -53,6 +53,25 @@ button{font-family:var(--sans);cursor:pointer;-webkit-tap-highlight-color:transp
 .ref-box{margin-top:20px;padding:14px;background:var(--ref-bg);border:1px solid var(--ref-border);border-radius:8px;font-size:11px;color:var(--text-faint);line-height:1.6}.ref-box strong{color:var(--text-muted);font-weight:600;display:block;margin-bottom:3px}
 .theme-toggle{background:none;border:1px solid var(--border);border-radius:6px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-dim);transition:all .15s}.theme-toggle:hover{border-color:var(--border-light);color:var(--text)}
 .settings-row{margin-bottom:12px}.settings-row label{display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;font-weight:500}.settings-msg{font-size:11px;margin-top:8px;padding:6px 10px;border-radius:4px}.settings-msg.ok{color:var(--green);background:rgba(74,222,128,.06);border:1px solid rgba(74,222,128,.12)}.settings-msg.err{color:var(--orange);background:rgba(251,146,60,.06);border:1px solid rgba(251,146,60,.12)}
+.chat-fab{position:fixed;bottom:max(env(safe-area-inset-bottom,20px),20px);right:20px;width:52px;height:52px;border-radius:50%;background:#1d4ed8;border:none;color:#fff;font-size:22px;box-shadow:0 4px 16px rgba(29,78,216,.4);z-index:100;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.chat-fab:hover{transform:scale(1.08)}
+.chat-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.chat-overlay.open{display:flex}
+.chat-box{background:var(--surface);border:1px solid var(--border);border-radius:14px 14px 0 0;width:100%;max-width:500px;height:70vh;max-height:600px;display:flex;flex-direction:column;animation:chatSlide .2s ease}
+@keyframes chatSlide{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.chat-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+.chat-header h3{font-size:14px;font-weight:600;color:var(--text);margin:0}
+.chat-close{background:none;border:none;color:var(--text-muted);font-size:20px;padding:0 4px}
+.chat-messages{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.chat-msg{max-width:88%;padding:10px 13px;border-radius:10px;font-size:13px;line-height:1.55;word-wrap:break-word}
+.chat-msg.user{align-self:flex-end;background:var(--blue-solid);color:#fff;border-bottom-right-radius:3px}
+.chat-msg.bot{align-self:flex-start;background:var(--bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:3px}
+.chat-msg.bot.typing{color:var(--text-muted);font-style:italic}
+.chat-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);border-radius:0 0 14px 14px}
+.chat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:var(--sans);padding:10px 12px;outline:none;resize:none;min-height:40px;max-height:100px}
+.chat-input:focus{border-color:var(--border-light)}
+.chat-send{background:#1d4ed8;border:none;color:#fff;border-radius:8px;padding:0 16px;font-size:13px;font-weight:600;font-family:var(--sans);white-space:nowrap}
+.chat-send:disabled{opacity:.4;cursor:default}
 </style>
 </head>
 <body>
@@ -64,12 +83,20 @@ button{font-family:var(--sans);cursor:pointer;-webkit-tap-highlight-color:transp
   <div class="sync-status" id="syncStatus"><span class="sync-dot none" id="syncDot"></span><span id="syncText">Cloud niet ingesteld</span></div>
 </div>
 <div class="content">
-  <div class="panel" id="settingsPanel" style="display:none"><h3>Cloud Sync (Google Sheets)</h3><div class="settings-row"><label>Apps Script URL</label><input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="saveApiBtn">Opslaan &amp; testen</button><button class="btn btn-ghost btn-sm" id="clearApiBtn">Verwijderen</button></div><div id="settingsMsg"></div></div>
+  <div class="panel" id="settingsPanel" style="display:none"><h3>Cloud Sync (Google Sheets)</h3><div class="settings-row"><label>Apps Script URL</label><input type="text" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="saveApiBtn">Opslaan &amp; testen</button><button class="btn btn-ghost btn-sm" id="clearApiBtn">Verwijderen</button></div><div id="settingsMsg"></div><hr style="border:none;border-top:1px solid var(--border);margin:16px 0"><h3>Claude Assistent</h3><div class="settings-row"><label>Anthropic API Key</label><input type="text" id="claudeKey" placeholder="sk-ant-api03-..."></div><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" id="saveClaudeBtn">Opslaan</button><button class="btn btn-ghost btn-sm" id="clearClaudeBtn">Verwijderen</button></div><div id="claudeMsg"></div></div>
   <div class="panel" id="historyPanel" style="display:none"><h3>Meethistorie</h3><div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn btn-ghost btn-sm" id="refreshHistBtn">Vernieuwen vanuit cloud</button></div><div class="history-list" id="histList"></div></div>
   <div class="grid" id="cardGrid"></div>
   <div class="actions"><button class="btn btn-primary" id="saveBtn" disabled>Meting opslaan</button><button class="btn btn-ghost" id="clearBtn">Wissen</button></div>
   <div id="adviceSection" class="advice-section" style="display:none"><h3>Doseringsadvies</h3><div id="adviceList"></div></div>
   <div class="ref-box"><strong>Berekeningsbasis (7500L)</strong>TA+: 112.5g = +10 ppm (max 225g per behandeling) &middot; pH Up BSI: 150 ml = +0.2 pH (stappen max 150 ml) &middot; Zout: ~1 kg/m3 = +1 ppt &middot; Volgorde: altijd eerst TA, dan pH &middot; Circulatiepomp min. 2-4 uur na toevoeging</div>
+</div>
+<button class="chat-fab" id="chatFab" title="Vraag aan Claude" style="display:none">&#128172;</button>
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-box">
+    <div class="chat-header"><h3>Swimspa Assistent</h3><button class="chat-close" id="chatClose">&#10005;</button></div>
+    <div class="chat-messages" id="chatMsgs"><div class="chat-msg bot">Stel me een vraag over je swimspa, waterbehandeling, doseringen of apparatuur.</div></div>
+    <div class="chat-input-row"><textarea class="chat-input" id="chatInput" placeholder="Stel een vraag..." rows="1"></textarea><button class="chat-send" id="chatSend">Verstuur</button></div>
+  </div>
 </div>
 <script>
 const V=7.5,P={ph:{min:7.0,max:7.6,iMin:7.2,iMax:7.3,unit:'',label:'pH',step:'0.01'},ta:{min:80,max:120,iMin:90,iMax:110,unit:'ppm',label:'TA (alkaliniteit)',step:'1'},chlorine:{min:1,max:3,iMin:1.5,iMax:2.5,unit:'ppm',label:'Vrije chloor',step:'0.1'},rx:{min:700,max:750,iMin:710,iMax:740,unit:'mV',label:'Rx (ORP)',step:'1'},salt:{min:3.5,max:4.0,iMin:3.6,iMax:3.9,unit:'ppt',label:'Zout (TDS)',step:'0.01'}};
@@ -136,6 +163,88 @@ document.getElementById('settingsBtn').addEventListener('click',function(){const
 document.getElementById('saveApiBtn').addEventListener('click',async function(){const u=document.getElementById('apiUrl').value.trim(),m=document.getElementById('settingsMsg');if(!u){m.className='settings-msg err';m.textContent='Vul een URL in.';return}m.className='settings-msg';m.textContent='Testen...';const ok=await tApi(u);if(ok){sA(u);m.className='settings-msg ok';m.textContent='Verbinding gelukt! Cloud sync actief.';const ch=await cHist();if(ch){hist=ch;sL();rH()}}else{m.className='settings-msg err';m.textContent='Geen verbinding. Controleer URL en of het script als webapp is geimplementeerd.'}});
 document.getElementById('clearApiBtn').addEventListener('click',function(){document.getElementById('apiUrl').value='';sA('');const m=document.getElementById('settingsMsg');m.className='settings-msg ok';m.textContent='Cloud sync uitgeschakeld.'});
 document.getElementById('refreshHistBtn').addEventListener('click',async function(){if(!apiUrl){alert('Stel eerst een Cloud URL in via het tandwiel-icoon.');return}this.textContent='Laden...';const ch=await cHist();if(ch){hist=ch;sL();rH();this.textContent='Vernieuwd!'}else this.textContent='Mislukt';setTimeout(()=>{this.textContent='Vernieuwen vanuit cloud'},1500)});
+
+// Claude chat
+let claudeKey='';
+function lCK(){claudeKey=localStorage.getItem('sck')||'';document.getElementById('claudeKey').value=claudeKey;document.getElementById('chatFab').style.display=claudeKey?'flex':'none'}
+function sCK(k){claudeKey=k;localStorage.setItem('sck',k);document.getElementById('chatFab').style.display=k?'flex':'none'}
+
+const SYSTEM_PROMPT=`Je bent de Swimspa Assistent voor een Passion Activity 1 Swimspa (7500 liter). Je helpt Erwin met waterbehandeling, doseringen en apparatuur.
+
+Vaste gegevens:
+- Waterinhoud: 7500 liter (factor 0.75 op standaard 10m3 doseringen)
+- Doelwaarden: pH 7.0-7.6 (ideaal 7.2-7.3), TA 80-120 ppm, vrije chloor 1-3 ppm, Rx 700-750 mV, zout 3.5-4.0 ppt
+- TA+ poeder (witte emmer): 150g per 10m3 = +10 ppm. Voor 7500L: 112.5g = +10 ppm. Max 225g per behandeling. Oplossen in emmer warm water.
+- BSI pH Up (vloeibaar): 20ml per m3 = +0.2 pH. Voor 7500L: 150ml = +0.2 pH. In stappen van max 150ml, 2 uur wachten per stap.
+- pH Down/min: 20ml per m3 = -0.2 pH. Voor 7500L: 150ml = -0.2 pH. Stappen van max 150ml.
+- Zwembadzout (NaCl): ~1 kg per m3 = +1 ppt. Na toevoeging 24 uur wachten voor meting.
+- Volgorde: ALTIJD eerst TA op peil brengen, dan pas pH corrigeren.
+- Circulatiepomp minimaal 2-4 uur aan na elke toevoeging.
+- Chemicalien altijd eerst oplossen in emmer, nooit direct in spa.
+
+Systemen:
+- Davey EcoSalt2 DES2-35E: zoutchlorinator, elektrolytische cel in lijn met flow switch. Productie% instelbaar.
+- EPS ONE pH Rx: automatische pH en Rx dosering. Display toont pH en Rx (mV) continu. Setpoint pH 7.20, Rx 775 mV. Kalibratie met pH7, pH4 en Rx 475mV ijkvloeistof.
+- Zandfilter: wekelijks backwash bij druk >1.5 bar.
+- Balboa-bediening: touchpad voor temperatuur, jets, verlichting.
+
+Testapparatuur:
+- Lumiso Pooltest 4/6: tabletten DPD1 (vrije chloor), DPD3 (totaal chloor), Phenol Red (pH), Alkaphot (TA). Altijd eerst blanking met spa-water.
+- Hanna HI983024 TDS-meter: zout meten, max 4cm dompelen, kalibratie 6.44 mS/cm.
+
+Geef altijd concrete doseringen in grammen of milliliters. Antwoord in het Nederlands, kort en praktisch.`;
+
+let chatHistory=[];
+async function sendChat(msg){
+  if(!claudeKey||!msg.trim())return;
+  const msgs=document.getElementById('chatMsgs');
+  const userDiv=document.createElement('div');userDiv.className='chat-msg user';userDiv.textContent=msg;msgs.appendChild(userDiv);
+  const typing=document.createElement('div');typing.className='chat-msg bot typing';typing.textContent='Even denken...';msgs.appendChild(typing);
+  msgs.scrollTop=msgs.scrollHeight;
+  document.getElementById('chatSend').disabled=true;
+
+  // Include current values as context
+  let ctx='';const cv=Object.entries(vals).filter(([,v])=>v!=='');
+  if(cv.length)ctx='\n\nHuidige meetwaarden: '+cv.map(([k,v])=>P[k].label+': '+v+(P[k].unit?' '+P[k].unit:'')).join(', ')+'.';
+
+  chatHistory.push({role:'user',content:msg+ctx});
+  // Keep last 10 messages to avoid token overflow
+  if(chatHistory.length>10)chatHistory=chatHistory.slice(-10);
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':claudeKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1024,system:SYSTEM_PROMPT,messages:chatHistory})
+    });
+    const data=await resp.json();
+    typing.remove();
+    if(data.content&&data.content[0]){
+      const reply=data.content[0].text;
+      chatHistory.push({role:'assistant',content:reply});
+      const botDiv=document.createElement('div');botDiv.className='chat-msg bot';botDiv.textContent=reply;msgs.appendChild(botDiv);
+    }else if(data.error){
+      const errDiv=document.createElement('div');errDiv.className='chat-msg bot';errDiv.style.color='var(--orange)';errDiv.textContent='Fout: '+(data.error.message||'onbekend');msgs.appendChild(errDiv);
+    }
+  }catch(e){
+    typing.remove();
+    const errDiv=document.createElement('div');errDiv.className='chat-msg bot';errDiv.style.color='var(--orange)';errDiv.textContent='Geen verbinding met Claude.';msgs.appendChild(errDiv);
+  }
+  document.getElementById('chatSend').disabled=false;msgs.scrollTop=msgs.scrollHeight;
+}
+
+lCK();
+document.getElementById('saveClaudeBtn').addEventListener('click',function(){
+  const k=document.getElementById('claudeKey').value.trim(),m=document.getElementById('claudeMsg');
+  if(!k){m.className='settings-msg err';m.textContent='Vul een API key in.';return}
+  sCK(k);m.className='settings-msg ok';m.textContent='API key opgeslagen. De chat-knop verschijnt rechtsonder.'});
+document.getElementById('clearClaudeBtn').addEventListener('click',function(){document.getElementById('claudeKey').value='';sCK('');document.getElementById('claudeMsg').className='settings-msg ok';document.getElementById('claudeMsg').textContent='API key verwijderd.'});
+document.getElementById('chatFab').addEventListener('click',function(){document.getElementById('chatOverlay').classList.add('open');document.getElementById('chatInput').focus()});
+document.getElementById('chatClose').addEventListener('click',function(){document.getElementById('chatOverlay').classList.remove('open')});
+document.getElementById('chatOverlay').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')});
+document.getElementById('chatSend').addEventListener('click',function(){const inp=document.getElementById('chatInput');const msg=inp.value.trim();if(msg){sendChat(msg);inp.value='';inp.style.height='auto'}});
+document.getElementById('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('chatSend').click()}});
+document.getElementById('chatInput').addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'});
 
 // Theme
 function setTheme(t){document.documentElement.className=t==='light'?'light':'';document.getElementById('themeBtn').innerHTML=t==='light'?'&#9728;':'&#9790;';document.querySelector('meta[name=theme-color]').content=t==='light'?'#f1f5f9':'#0f172a';localStorage.setItem('st',t)}
